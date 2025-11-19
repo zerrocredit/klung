@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Klung — Embedded Game</title>
+  <style>
+    :root{height:100%}
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    .wrap{display:flex;flex-direction:column;height:100%}
+    header{background:#0b1220;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px}
+    header h1{font-size:16px;margin:0}
+    header .controls{margin-left:auto;display:flex;gap:8px}
+    button{background:#152033;color:#fff;border:0;padding:8px 10px;border-radius:6px;cursor:pointer}
+    button:active{transform:translateY(1px)}
+    .frame-wrap{flex:1;display:flex;align-items:stretch;justify-content:stretch;background:#000}
+    iframe{flex:1;border:0;width:100%;height:100%}
+    .fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ddd;padding:18px;text-align:center}
+    .note{font-size:13px;color:#9fb0c8;margin-top:8px;max-width:720px}
+    footer{padding:10px 14px;font-size:13px;background:#071018;color:#8fb0c8}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Klung — Embedded</h1>
+      <div class="controls">
+        <button id="open-new">Open in new tab</button>
+        <button id="toggle-full">Toggle Fullscreen</button>
+        <button id="download-hints">How to make local copy</button>
+      </div>
+    </header>
+
+    <div class="frame-wrap" id="frame-wrap">
+      <!-- Primary approach: iframe (fast). Some sites disallow framing (X-Frame-Options / CSP). -->
+      <iframe id="gameFrame" src="https://a961e44d-997f-446c-ad17-8c2d0ac0ef9e.poki-gdn.com/c4330dc6-3fcb-43fa-8987-08aa6865a416/index.html"
+              title="Klung (embedded)"></iframe>
+
+      <!-- Fallback message (visible if iframe blocked by site or user disables JS in iframe) -->
+      <div class="fallback" id="fallback" style="display:none">
+        <div>
+          <strong>Could not embed the game.</strong>
+        </div>
+        <div class="note">
+          The remote site either blocks framing (X-Frame-Options or Content-Security-Policy) or needs JavaScript to initialize.
+          Use “Open in new tab” or follow the download instructions (button above) to create a local copy.
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Tip: If the embedded content looks blank, try clicking “Open in new tab.” If you prefer a fully local copy, click
+      “How to make local copy” for step-by-step instructions.
+    </footer>
+  </div>
+
+  <script>
+    const frame = document.getElementById('gameFrame');
+    const fallback = document.getElementById('fallback');
+    const wrap = document.getElementById('frame-wrap');
+
+    // Detect if iframe is empty/blocked after load and show fallback
+    function checkIframe() {
+      try {
+        // Accessing iframe contentWindow may throw when cross-origin or blocked
+        const cw = frame.contentWindow;
+        if (!cw || cw.length === 0) throw new Error('no contentWindow'
