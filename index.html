@@ -5,63 +5,86 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Klung — Embedded Game</title>
   <style>
-    :root{height:100%}
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    .wrap{display:flex;flex-direction:column;height:100%}
-    header{background:#0b1220;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px}
-    header h1{font-size:16px;margin:0}
-    header .controls{margin-left:auto;display:flex;gap:8px}
-    button{background:#152033;color:#fff;border:0;padding:8px 10px;border-radius:6px;cursor:pointer}
-    button:active{transform:translateY(1px)}
-    .frame-wrap{flex:1;display:flex;align-items:stretch;justify-content:stretch;background:#000}
-    iframe{flex:1;border:0;width:100%;height:100%}
-    .fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ddd;padding:18px;text-align:center}
-    .note{font-size:13px;color:#9fb0c8;margin-top:8px;max-width:720px}
-    footer{padding:10px 14px;font-size:13px;background:#071018;color:#8fb0c8}
+    :root { height: 100%; }
+    html, body { height: 100%; margin: 0; background: #000; color: #fff; font-family: sans-serif; }
+    .container { display: flex; flex-direction: column; height: 100%; }
+    header { padding: 10px; background: #111; display: flex; align-items: center; }
+    header h1 { flex: 1; margin: 0; font-size: 18px; }
+    header .buttons { display: flex; gap: 8px; }
+    button { padding: 6px 10px; background: #333; color: #fff; border: none; cursor: pointer; border-radius: 4px; }
+    .game-frame { flex: 1; position: relative; }
+    iframe { width: 100%; height: 100%; border: none; }
+    .fallback { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; padding: 20px; background: rgba(0,0,0,0.8); border-radius: 8px; }
+    footer { padding: 8px; background: #111; font-size: 13px; text-align: center; }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
     <header>
-      <h1>Klung — Embedded</h1>
-      <div class="controls">
-        <button id="open-new">Open in new tab</button>
-        <button id="toggle-full">Toggle Fullscreen</button>
-        <button id="download-hints">How to make local copy</button>
+      <h1>Klung (minigamesville)</h1>
+      <div class="buttons">
+        <button id="openNew">Open in new tab</button>
+        <button id="toggleFull">Toggle Fullscreen</button>
+        <button id="help">Get local copy instructions</button>
       </div>
     </header>
 
-    <div class="frame-wrap" id="frame-wrap">
-      <!-- Primary approach: iframe (fast). Some sites disallow framing (X-Frame-Options / CSP). -->
-      <iframe id="gameFrame" src="https://a961e44d-997f-446c-ad17-8c2d0ac0ef9e.poki-gdn.com/c4330dc6-3fcb-43fa-8987-08aa6865a416/index.html"
-              title="Klung (embedded)"></iframe>
-
-      <!-- Fallback message (visible if iframe blocked by site or user disables JS in iframe) -->
-      <div class="fallback" id="fallback" style="display:none">
-        <div>
-          <strong>Could not embed the game.</strong>
-        </div>
-        <div class="note">
-          The remote site either blocks framing (X-Frame-Options or Content-Security-Policy) or needs JavaScript to initialize.
-          Use “Open in new tab” or follow the download instructions (button above) to create a local copy.
-        </div>
+    <div class="game-frame" id="gameFrameWrap">
+      <iframe id="gameFrame" src="https://minigamesville.com/wp-content/uploads/2025/08/Klung.html"></iframe>
+      <div class="fallback" id="fallback" style="display: none;">
+        <p>Could not embed the game.</p>
+        <p>Use “Open in new tab” or follow the instructions below to save a local copy.</p>
       </div>
     </div>
 
     <footer>
-      Tip: If the embedded content looks blank, try clicking “Open in new tab.” If you prefer a fully local copy, click
-      “How to make local copy” for step-by-step instructions.
+      Tip: If the embedded game doesn't show, try opening it in a new tab.  
     </footer>
   </div>
 
   <script>
     const frame = document.getElementById('gameFrame');
     const fallback = document.getElementById('fallback');
-    const wrap = document.getElementById('frame-wrap');
+    const wrap = document.getElementById('gameFrameWrap');
 
-    // Detect if iframe is empty/blocked after load and show fallback
-    function checkIframe() {
-      try {
-        // Accessing iframe contentWindow may throw when cross-origin or blocked
-        const cw = frame.contentWindow;
-        if (!cw || cw.length === 0) throw new Error('no contentWindow'
+    // Timer to detect if frame is not loading
+    let timer = setTimeout(() => {
+      // After some time, show fallback
+      fallback.style.display = 'block';
+      frame.style.display = 'none';
+    }, 3000);
+
+    frame.addEventListener('load', () => {
+      clearTimeout(timer);
+      fallback.style.display = 'none';
+      frame.style.display = 'block';
+    });
+
+    document.getElementById('openNew').addEventListener('click', () => {
+      window.open(frame.src, '_blank', 'noopener');
+    });
+
+    document.getElementById('toggleFull').addEventListener('click', async () => {
+      if (!document.fullscreenElement) {
+        await wrap.requestFullscreen().catch(() => {
+          alert('Fullscreen request failed.');
+        });
+      } else {
+        await document.exitFullscreen();
+      }
+    });
+
+    document.getElementById('help').addEventListener('click', () => {
+      alert(
+        `To make a local copy of the game:
+1) Open the game URL in your browser.  
+2) Open Developer Tools → Network → Reload → look for .js, .wasm, .data or image assets.  
+3) Save the HTML (Right-click → “Save As” → Webpage, Complete) or copy its source.  
+4) Download all referenced assets into a folder.  
+5) Update paths in the HTML to your local filenames.  
+6) To run locally without issues, serve the folder with a local web server (e.g. run \`python3 -m http.server\` in that folder) — local file access restrictions may block things otherwise.`
+      );
+    });
+  </script>
+</body>
+</html>
